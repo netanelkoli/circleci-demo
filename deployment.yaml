@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: hello-kubernetes
-        image: hello-kubernetes:1.0
+        image: netanelkoli/circleci-demo:latest
         ports:
         - containerPort: 8080
