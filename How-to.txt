@@ -1,0 +1,47 @@
+----------------Start Cluster, Deploy Applications-----
+
+Minikube start
+
+Images:
+hello-kubernetes
+earlysense
+
+eval $(minikube docker-env)
+docker images | grep -E 'hello|circle|earlysense'
+
+---------------Build 2 version, expose IP and Port,change image with zero-downtime, scale-----
+
+docker build --no-cache --build-arg IMAGE_VERSION="1.0" --build-arg IMAGE_CREATE_DATE="`date -u +"%Y-%m-%dT%H:%M:%SZ"`" --build-arg IMAGE_SOURCE_REVISION="`git rev-parse HEAD`" -f Dockerfile \
+-t "hello-kubernetes:1.0" .
+
+kubectl apply -f hello-kubernetes.yaml
+
+How to expose:
+1. $ kubectl port-forward svc/hello-kubernetes 8080:80
+	Comment: need to restart each time setting a new image
+2. $ minikube service hello-kubernetes --url
+	Comment: get the ip:port and past in your URL
+
+Presenting:
+
+1. Update to new Image:
+kubectl set image deployment/hello-kubernetes hello-kubernetes=hello-kubernetes:1.0
+
+2. Multiple images with Ingress:
+---------------------INGRESS---------------------------
+Ingress:
+
+1. minikube addons enable ingress
+2. kubectl apply -f yaml/ingress.yaml
+3. Optional - if wanting to replace/edit existing running ingress use: kubectl replace ingress -f yaml/ingress.yaml
+4. Go to ip $(minikube ip) - 192.168.99.100/earlysense
+
+3.
+----------------------ARGOCD----------------------------
+Follow this stratup guide:
+https://github.com/argoproj/argo-cd/blob/master/docs/getting_started.md
+1. (Option A) kubectl port-forward svc/argocd-server -n argocd 8080:443
+2. Go to : 127.0.0.1:8080
+3. Get argocd password: kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o name | cut -d'/' -f 2
+4. New app - path:"yaml" (as in git)
+5. Version upgrade: change in deployment, config, server files.
